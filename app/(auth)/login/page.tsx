@@ -34,9 +34,21 @@ export default function LoginPage() {
 
       toast.success('Login successful!');
 
+      // Redirect based on role
+      const rolePaths: { [key: number]: string } = {
+        1: '/dashboard/developer',
+        2: '/dashboard/platform-admin',
+        3: '/dashboard/operations-admin',
+        4: '/dashboard/retailer',
+        5: '/dashboard/merchant',
+        6: '/dashboard/supplier',
+        7: '/dashboard/courier',
+        8: '/customer', // Updated to direct /customer for role 8
+      };
+
       // Force a full page reload to let middleware process the token
       setTimeout(() => {
-        window.location.href = `/dashboard/${getRolePath(user.role)}`; // Full navigation
+        window.location.href = rolePaths[user.role] || '/customer'; // Full navigation
       }, 1500); // 1.5 seconds delay for toast visibility
       
     } catch (error) {
@@ -44,20 +56,6 @@ export default function LoginPage() {
     } finally {
       setIsSubmitting(false); // Always reset submitting state
     }
-  };
-
-  const getRolePath = (role: number) => {
-    const rolePaths: { [key: number]: string } = {
-      1: 'developer',
-      2: 'platform-admin',
-      3: 'operations-admin',
-      4: 'retailer',
-      5: 'merchant',
-      6: 'supplier',
-      7: 'courier',
-      8: 'customer',
-    };
-    return rolePaths[role] || 'customer';
   };
 
   return (

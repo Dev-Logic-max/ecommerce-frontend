@@ -16,18 +16,31 @@ export default function RoleRequestPage() {
     });
 
     if (loading) return <div>Loading...</div>;
-    if (!user) {
-        router.push('/login');
+    if (!user || user.role === 1) { // Restrict Developers from requesting roles
+        router.push(user ? '/' : '/login');
         return null;
     }
 
     const onSubmit = async (data: RoleRequestFormData) => {
         try {
-            await authApi.requestRole(data);
-            toast.success('Role request submitted! Awaiting approval.');
-            router.push('/'); // Redirect to homepage after submission
-        } catch (error) {
-            toast.error('Failed to submit role request!');
+            console.log("Attempting to send request with data", data)
+            const response = await authApi.requestRole(data);
+            console.log('Response from server:', response);
+            toast.success('Role request submitted! Awaiting approval.', {
+                autoClose: 5000, // 5 seconds duration
+            });
+            // router.push('/'); // Redirect to homepage after submission
+        } catch (error: any) {
+            console.error('Error submitting role request:', error.response ? error.response.data : error.message);
+            if (error.response?.status === 409) {
+                toast.info('A pending request already exists for this role. Please wait for approval.', {
+                    autoClose: 5000, // 5 seconds duration
+                });
+            } else {
+                toast.error('Failed to submit role request due to an unexpected error.', {
+                    autoClose: 5000, // 5 seconds duration
+                });
+            }
         }
     };
 

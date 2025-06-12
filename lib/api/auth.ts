@@ -1,61 +1,3 @@
-// import axios from 'axios';
-// import { toast } from 'react-toastify';
-
-// const api = axios.create({
-//   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-//   withCredentials: true,
-// });
-
-// // Interceptor for authenticated requests
-// api.interceptors.request.use((config) => {
-//   const publicEndpoints = ['/auth/signup', '/auth/login'];
-//   if (publicEndpoints.some(endpoint => config.url?.includes(endpoint))) {
-//     return config;
-//   }
-//   const token = localStorage.getItem('token');
-//   if (token) {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// }, (error) => {
-//   toast.error('Request failed!');
-//   return Promise.reject(error);
-// });
-
-// api.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     toast.error(error.response?.data?.message || 'Something went wrong!');
-//     return Promise.reject(error);
-//   }
-// );
-
-// export const api = {
-//   signup: (data: { username: string; email?: string; phone?: string; password: string }) => api.post('/auth/signup', data),
-//   login: (data: { username?: string; email?: string; password: string }) => api.post('/auth/login', data),
-//   verify: () => api.get('/auth/verify'),
-//   createUser: (data: { username: string; email: string; phone: string; password: string; role: string }) => api.post('/auth/create-user', data),
-//   createRole: (data: { name: string }) => api.post('/auth/create-role', data),
-//   requestRole: (data: { requestedRole: string }) => api.post('/auth/role/request', data),
-//   approveRole: (id: number) => api.post(`/auth/role/approve/${id}`),
-//   rejectRole: (id: number) => api.post(`/auth/role/reject/${id}`),
-//   updateUser: (data: { username?: string; email?: string; phone?: string; password?: string; profilePicture?: string }) => api.patch('/auth/update', data),
-//   createShop: (data: { name: string; description?: string }) => api.post('/auth/create-shop', data),
-//   getUserShops: () => api.get('/auth/shops'),
-//   updateShop: (id: number, data: { name?: string; description?: string }) => api.patch(`/auth/update-shop/${id}`, data),
-//   deleteShop: (id: number) => api.delete(`/auth/delete-shop/${id}`),
-//   getShopProducts: (shopId: number) => api.get(`/auth/products/${shopId}`),
-//   createProduct: (data: { shopId: number; name: string; description?: string; price: number; stock: number }) => api.post('/auth/create-product', data),
-//   updateProduct: (id: number, data: { name?: string; description?: string; price?: number; stock?: number }) => api.patch(`/auth/update-product/${id}`, data),
-//   deleteProduct: (id: number) => api.delete(`/auth/delete-product/${id}`),
-//   createOrder: (data: { productId: number; quantity: number }) => api.post('/auth/create-order', data),
-//   getUserOrders: () => api.get('/auth/orders'),
-//   updateOrderStatus: (id: number, status: string) => api.patch(`/auth/update-order/${id}`, { status }),
-//   getUserNotifications: () => api.get('/auth/notifications'),
-// };
-
-// export default api;
-
 import axios, { AxiosResponse } from 'axios'
 import Cookies from 'js-cookie'
 import { toast } from 'react-toastify';
@@ -94,6 +36,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 409) {
+      return Promise.reject(error); // Let frontend handle it
+    }
     toast.error(error.response?.data?.message || 'Something went wrong!');
     return Promise.reject(error);
   }
@@ -113,10 +58,12 @@ export const authApi = {
     api.post('/auth/create-user', data),
   updateUser: (data: { username?: string; email?: string; phone?: string; password?: string; profilePicture?: string }) =>
     api.patch('/auth/update', data),
+  getUsers: () => api.get('/auth/users'),
+  getUser: (id: number) => api.get(`/auth/user/${id}`),
 
   // 🛠️ Role Management
   createRole: (data: { name: string }) => api.post('/auth/create-role', data),
-  requestRole: (data: { requestedRole: string }) => api.post('/auth/role/request', data),
+  requestRole: (data: { requestedRole: string }) => api.post('/auth/role-request', data),
   getRoleRequests: () => api.get('/auth/role-requests'),
   getUserRoleRequests: () => api.get('/auth/role-requests/user'),
   approveRole: (id: number) => api.post(`/auth/role/approve/${id}`),
@@ -134,10 +81,10 @@ export const authApi = {
 
   // 📦 Product Management
   createProduct: (data: { name: string; description?: string; price: number; stock: number; shopId: number }) =>
-    api.post('/auth/products', data),
-  updateProduct: (id: number, data: { name?: string; description?: string; price?: number; stock?: number; shopId?: number }) =>
-    api.put(`/auth/products/${id}`, data),
-  deleteProduct: (id: number) => api.delete(`/auth/products/${id}`),
+    api.post('/auth/shop-products', data),
+  updateProduct: (id: number, data: { name?: string; description?: string; price?: number; stock?: number }) =>
+    api.put(`/auth/shop-products/${id}`, data),
+  deleteProduct: (id: number) => api.delete(`/auth/shop-products/${id}`),
   getShopProducts: (shopId: number) => api.get(`/auth/shops/${shopId}/products`),
   getAllProducts: () => api.get('/auth/products'),
   getLowStockProducts: () => api.get('/auth/products/low-stock'),
@@ -148,6 +95,8 @@ export const authApi = {
   getUserOrders: () => api.get('/auth/orders'),
   getAllOrders: () => api.get('/auth/orders/all'),
   updateOrderStatus: (id: number, status: string) => api.put(`/auth/orders/${id}/status`, { status }),
+  requestWarehouseOrder: (data: { productId: number; quantity: number; shopId?: number }) => api.post('/auth/request-warehouse-order', data),
+  createWarehouseOrder: (data: { productId: number; quantity: number; shopId?: number }) => api.post('/auth/warehouse-orders', data),
 
   // 🔔 Notification Management
   getUserNotifications: () => api.get('/auth/notifications'),
@@ -168,6 +117,17 @@ export const authApi = {
   getWishlist: () => api.get('/auth/wishlist'),
   addToWishlist: (productId: number) => api.post(`/auth/wishlist/${productId}`),
   removeFromWishlist: (productId: number) => api.delete(`/auth/wishlist/${productId}`),
+
+  // 🏬 Warehouse Management
+  createWarehouse: (data: { name: string; location?: string; description?: string; warehouseIcon?: string; capacity?: number }) => api.post('/auth/warehouse', data),
+  updateWarehouse: (data: { name?: string; location?: string }) => api.put('/auth/warehouse', data),
+  deleteWarehouse: () => api.delete('/auth/warehouse'),
+  getWarehouse: () => api.get('/auth/warehouse'),
+  getWarehouseProducts: () => api.get('/auth/warehouse-products'),
+  createWarehouseProduct: (data: { name: string; description?: string; price: number; stock: number; warehouseId: number }) => api.post('/auth/warehouse-products', data),
+  updateWarehouseProduct: (id: number, data: { name?: string; description?: string; price?: number; stock?: number }) => api.put(`/auth/warehouse-products/${id}`, data),
+  deleteWarehouseProduct: (id: number) => api.delete(`/auth/warehouse-products/${id}`),
+  searchWarehouseProducts: (query: string) => api.get('/auth/search-warehouse-products', { params: { q: query } }),
 
   // 🚚 Courier Management
   getAssignedOrders: () => api.get('/auth/orders/assigned'),

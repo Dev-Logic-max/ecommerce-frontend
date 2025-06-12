@@ -65,10 +65,14 @@ export async function middleware(request: NextRequest) {
       5: ['/dashboard/merchant'],
       6: ['/dashboard/supplier'],
       7: ['/dashboard/courier'],
-      8: ['/dashboard/customer'],
+      8: ['/customer'],
     };
 
+    // Add role-request as an allowed path for all authenticated users except Developer (role 1)
     const allowedPaths = rolePaths[decoded.role] || [];
+    if (decoded.role !== 1) {
+      allowedPaths.push('/role-request');
+    }
     const isPathAllowed = allowedPaths.some((p) => path.startsWith(p));
 
     console.log('[Middleware] Allowed Paths:', allowedPaths);
@@ -76,7 +80,11 @@ export async function middleware(request: NextRequest) {
 
     if (!isPathAllowed) {
       console.warn('[Middleware] Blocked access to:', path, '| role:', decoded.role);
-      return NextResponse.redirect(new URL('/login', request.url));
+      // return NextResponse.redirect(new URL('/login', request.url)); 
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized: You do not have access to this page.' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     // Attach user info to request for downstream use

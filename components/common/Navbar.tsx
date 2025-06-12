@@ -3,6 +3,7 @@
 import { useAuth } from '../../app/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -33,7 +34,7 @@ export default function Navbar() {
         ];
       case 8: // Customer
         return [
-          { href: '/dashboard/customer', label: 'Customer Dashboard' },
+          { href: '/customer', label: 'Customer Dashboard' },
           { href: '/search', label: 'Search Products' },
         ];
       default:
@@ -42,11 +43,6 @@ export default function Navbar() {
   };
 
   const navLinks = getNavLinks();
-
-  // if (!user) {
-  //   router.push('/login');
-  //   return null;
-  // }
 
   if (!user) return null; // Remove redirect, handled by middleware
 
@@ -64,9 +60,9 @@ export default function Navbar() {
             </a>
           ))}
           {user.role !== 1 && (
-            <a href="/auth/role/request" className="hover:text-gray-300">
+            <Link href="/role-request" >
               Request Role
-            </a>
+            </Link>
           )}
         </div>
         <div>

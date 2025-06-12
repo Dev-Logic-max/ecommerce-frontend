@@ -103,9 +103,9 @@ export default function SignupPage() {
         5: '/dashboard/merchant',
         6: '/dashboard/supplier',
         7: '/dashboard/courier',
-        8: '/dashboard/customer',
+        8: '/customer',
       };
-      router.push(rolePaths[user.role] || '/dashboard/customer');
+      router.push(rolePaths[user.role] || '/customer');
     } catch (error) {
       toast.error('Signup failed!');
     }
