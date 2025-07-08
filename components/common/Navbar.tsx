@@ -31,11 +31,33 @@ export default function Navbar() {
         return [
           { href: '/dashboard/retailer', label: 'Retailer Dashboard' },
           { href: '/search', label: 'Search Products' },
+          { href: '/dashboard/retailer/orders', label: 'Orders' },
+          { href: '/dashboard/retailer/shops', label: 'Shops' },
+          { href: '/dashboard/retailer/products', label: 'Products' },
+        ];
+      case 5: // Merchant
+        return [
+          { href: '/dashboard/merchant', label: 'Merchant Dashboard' },
+          { href: '/search', label: 'Search Products' },
+          { href: '/dashboard/merchant/orders', label: 'My Orders' },
+        ];
+      case 6: // Supplier
+        return [
+          { href: '/dashboard/supplier', label: 'Supplier Dashboard' },
+          { href: '/search', label: 'Search Products' },
+          { href: '/dashboard/supplier/orders', label: 'My Orders' },
+        ];
+      case 7: // Courier
+        return [
+          { href: '/dashboard/courier', label: 'Courier Dashboard' },
+          { href: '/search', label: 'Search Products' },
+          { href: '/dashboard/courier/orders', label: 'My Orders' },
         ];
       case 8: // Customer
         return [
           { href: '/customer', label: 'Customer Dashboard' },
           { href: '/search', label: 'Search Products' },
+          { href: '/customer/orders', label: 'My Orders' },
         ];
       default:
         return [{ href: '/search', label: 'Search Products' }];
@@ -51,13 +73,13 @@ export default function Navbar() {
       <div className="max-w-4xl mx-auto flex justify-between items-center">
         <div className="space-x-4">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               className="hover:text-gray-300"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
           {user.role !== 1 && (
             <Link href="/role-request" >

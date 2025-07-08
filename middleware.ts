@@ -68,11 +68,12 @@ export async function middleware(request: NextRequest) {
       8: ['/customer'],
     };
 
-    // Add role-request as an allowed path for all authenticated users except Developer (role 1)
+    // Add search and role-request as an allowed path for all authenticated users except Developer (role 1)
     const allowedPaths = rolePaths[decoded.role] || [];
     if (decoded.role !== 1) {
       allowedPaths.push('/role-request');
-    }
+    } 
+    allowedPaths.push('/search')
     const isPathAllowed = allowedPaths.some((p) => path.startsWith(p));
 
     console.log('[Middleware] Allowed Paths:', allowedPaths);

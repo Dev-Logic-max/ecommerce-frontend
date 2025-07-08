@@ -6,69 +6,77 @@ import { authApi } from '../../lib/api/auth';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts, setCustomerProductLoading } from '../../lib/store/slices/customerSlice';
+import { fetchOrders, setCustomerOrderLoading } from '../../lib/store/slices/customerSlice';
+import { AppDispatch, RootState } from '@/lib/store';
 
 export default function CustomerDashboard() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const { product: { products, loading: productLoading } } = useSelector((state: RootState) => state.customer);
+  const { order: { orders, loading: orderLoading } } = useSelector((state: RootState) => state.customer);
   const router = useRouter();
-  const [products, setProducts] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  // const [products, setProducts] = useState<any[]>([]);
+  // const [orders, setOrders] = useState<any[]>([]);
   const [productId, setProductId] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [openOrderDialog, setOpenOrderDialog] = useState(false);
 
   useEffect(() => {
-    if (!loading && user?.role === 8) {
-      fetchProducts();
-      fetchOrders();
+    if (!authLoading && user?.role === 8) {
+      // fetchProducts();
+      // fetchOrders();
+      dispatch(fetchProducts());
+      dispatch(fetchOrders());
     }
-  }, [loading, user]);
+  }, [authLoading, user, dispatch]);
 
-  const fetchProducts = async () => {
-    try {
-      const response = await authApi.getAllProducts();
-      setProducts(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch products!');
-    }
-  };
+  // const fetchProducts = async () => {
+  //   try {
+  //     const response = await authApi.getAllProducts();
+  //     setProducts(response.data);
+  //   } catch (error) {
+  //     toast.error('Failed to fetch products!');
+  //   }
+  // };
 
-  const fetchOrders = async () => {
-    try {
-      const response = await authApi.getUserOrders();
-      setOrders(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch orders!');
-    }
-  };
+  // const fetchOrders = async () => {
+  //   try {
+  //     const response = await authApi.getUserOrders();
+  //     setOrders(response.data);
+  //   } catch (error) {
+  //     toast.error('Failed to fetch orders!');
+  //   }
+  // };
 
   const handlePlaceOrder = async () => {
     if (!productId || quantity <= 0) {
       toast.error('Please select a valid product and quantity!');
       return;
     }
+    dispatch(setCustomerProductLoading(true));
     try {
       await authApi.createOrder({ productId, quantity });
       toast.success('Order placed successfully!');
       setOpenOrderDialog(false);
       setProductId(0);
       setQuantity(1);
-      fetchOrders();
+      // fetchOrders();
+      dispatch(fetchOrders())
+      router.push('/customer/orders')
     } catch (error) {
       toast.error('Failed to place order!');
+    } finally {
+      dispatch(setCustomerProductLoading(false));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  // if (loading) return <div>Loading...</div>;
+  if (authLoading || productLoading || orderLoading) return <div>Loading...</div>;
   if (!user || user.role !== 8) {
     router.push('/login');
     return null;

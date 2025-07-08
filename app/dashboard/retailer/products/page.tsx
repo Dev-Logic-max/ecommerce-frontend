@@ -10,6 +10,7 @@ export default function RetailerProducts() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
+  const [shops, setShops] = useState<any[]>([]);
   const [shopId, setShopId] = useState(0);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -19,9 +20,27 @@ export default function RetailerProducts() {
 
   useEffect(() => {
     if (!loading && user?.role === 4) {
+      fetchShops();
+    }
+  }, [loading, user]);
+
+  useEffect(() => {
+    if (shopId) {
       fetchProducts();
     }
-  }, [loading, user, shopId]);
+  }, [shopId]);
+
+  const fetchShops = async () => {
+    try {
+      const response = await authApi.getUserShops();
+      setShops(response.data);
+      if (response.data.length > 0) {
+        setShopId(response.data[0].id);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch shops!');
+    }
+  };
 
   const fetchProducts = async () => {
     try {
