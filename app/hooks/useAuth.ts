@@ -18,7 +18,7 @@ export const useAuth = () => {
   const verifyToken = async () => {
     try {
       const response = await authApi.verify();
-      setUser({ id: response.data.user.sub, username: response.data.user.username, role: response.data.user.role });
+      setUser({ id: response.data.user.userId, username: response.data.user.username, role: response.data.user.role });
     } catch (error) {
       localStorage.removeItem('token');
       Cookies.remove('token');
@@ -48,4 +48,22 @@ export const useAuth = () => {
   }, []);
 
   return { user, loading, logout };
+};
+
+
+export const useRoleRequest = () => {
+  const [roleRequests, setRoleRequests] = useState<any[]>([]);
+  const { user } = useAuth(); // Assume useAuth provides user
+
+  const fetchRoleRequests = async () => {
+    if (!user) return;
+    try {
+      const response = await authApi.getUserRoleRequests();
+      setRoleRequests(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch role requests:', error);
+    }
+  };
+
+  return { roleRequests, fetchRoleRequests };
 };

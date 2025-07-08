@@ -5,40 +5,38 @@ import { useRouter } from 'next/navigation';
 import { authApi } from '../../../lib/api/auth';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/lib/store';
+import { fetchOrders, setCustomerOrderLoading } from '@/lib/store/slices/customerSlice';
 
 export default function CustomerOrders() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
+  const dispatch = useDispatch<AppDispatch>()
+  const { order: { orders, loading: orderLoading } } = useSelector((state: RootState) => state.customer);
   const router = useRouter();
-  const [orders, setOrders] = useState<any[]>([]);
   const [productId, setProductId] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    if (!loading && user?.role === 8) {
-      fetchOrders();
+    if (!authLoading && user?.role === 8) {
+      dispatch(fetchOrders());
     }
-  }, [loading, user]);
-
-  const fetchOrders = async () => {
-    try {
-      const response = await authApi.getUserOrders();
-      setOrders(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch orders!');
-    }
-  };
+  }, [authLoading, user, dispatch]);
 
   const handleCreateOrder = async () => {
+    dispatch(setCustomerOrderLoading(true));
     try {
       await authApi.createOrder({ productId, quantity });
       toast.success('Order placed!');
-      fetchOrders();
+      dispatch(fetchOrders());
     } catch (error) {
       toast.error('Failed to place order!');
+    } finally {
+      dispatch(setCustomerOrderLoading(false));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (authLoading || orderLoading) return <div>Loading...</div>;
   if (!user || user.role !== 8) {
     router.push('/login');
     return null;

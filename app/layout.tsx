@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ToastContainer } from 'react-toastify';
 import "./globals.css";
-import Navbar from "@/components/common/Navbar";
+// import Navbar from "@/components/common/Navbar";
+import { AdminsThemeProvider } from "@/components/theme/AdminsThemeProvider";
+import { DeveloperNavbar } from "@/components/Navbar/DeveloperNavbar";
+import { DeveloperSidebar } from "@/components/Sidebar/DeveloperSidebar";
+import { StoreProvider } from "@/lib/store/Provider";
+import React from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,19 +28,30 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Navbar />
-        <main>{children}</main>
-        <ToastContainer
-          position="top-right" // Stacked vertically
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop // Layered effect: new toasts appear on top
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
+        <StoreProvider>
+          <AdminsThemeProvider>
+            {/* <Navbar /> */}
+            {/* <React.StrictMode>
+              {children}
+            </React.StrictMode> */}
+            <>
+              {children}
+            </>
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              // stacked
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
+            {/* <Providers /> */}
+          </AdminsThemeProvider>
+        </StoreProvider>
       </body>
     </html>
   );

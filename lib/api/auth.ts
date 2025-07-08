@@ -47,19 +47,20 @@ api.interceptors.response.use(
 // Export APi methods
 export const authApi = {
   // 🔒 Authentication Endpoints
-  signup: (data: { username: string; email?: string; phone?: string; password: string }) =>
-    api.post('/auth/signup', data),
-  login: (data: { username?: string; email?: string; password: string }) =>
-    api.post('/auth/login', data),
+  signup: (data: { username: string; email?: string; phone?: string; password: string; profile?: { name?: string; address?: string; city?: string; country?: string } }) =>  api.post('/auth/signup', data),
+  login: (data: { username?: string; email?: string; password: string }) =>  api.post('/auth/login', data),
   verify: () => api.get('/auth/verify'),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>  api.patch('/auth/change-password', data),
 
   // 👤 User Management
   createUser: (data: { username: string; password: string; roleId: number; email?: string; phone?: string }) =>
-    api.post('/auth/create-user', data),
-  updateUser: (data: { username?: string; email?: string; phone?: string; password?: string; profilePicture?: string }) =>
-    api.patch('/auth/update', data),
-  getUsers: () => api.get('/auth/users'),
-  getUser: (id: number) => api.get(`/auth/user/${id}`),
+    api.post('/user/create-user', data),
+  updateUser: (data: { username?: string; email?: string; phone?: string; profile?: { name?: string; address?: string; city?: string; country?: string } }) =>  api.patch(`/user/update-user`, data),
+  uploadAvatar: (formData: FormData, config?: any) => api.patch(`/user/upload-avatar`, formData, config),
+  getDeveloperUsers: () => api.get('/user/developer-users'),
+  getDeveloperUser: (id: number) => api.get(`/user/developer-user/${id}`),
+  getUsers: () => api.get('/user/users'),
+  getUser: (id: number) => api.get(`/user/user/${id}`),
 
   // 🛠️ Role Management
   createRole: (data: { name: string }) => api.post('/auth/create-role', data),
@@ -93,6 +94,7 @@ export const authApi = {
   // 📜 Order Management
   createOrder: (data: { productId: number; quantity: number }) => api.post('/auth/orders', data),
   getUserOrders: () => api.get('/auth/orders'),
+  getAdminOrders: () => api.get('/auth/orders/admin'),
   getAllOrders: () => api.get('/auth/orders/all'),
   updateOrderStatus: (id: number, status: string) => api.put(`/auth/orders/${id}/status`, { status }),
   requestWarehouseOrder: (data: { productId: number; quantity: number; shopId?: number }) => api.post('/auth/request-warehouse-order', data),
@@ -103,7 +105,8 @@ export const authApi = {
 
   // 🗂️ Category Management
   getCategories: () => api.get('/auth/categories'),
-  createCategory: (data: { name: string }) => api.post('/auth/categories', data),
+  createCategory: (data: { id: number, name: string }) => api.post('/auth/categories', data),
+  updateCategory: (id: number, data: { id: number, name: string }) => api.put(`/auth/categories/${id}`, data),
   deleteCategory: (id: number) => api.delete(`/auth/categories/${id}`),
 
   // 🛒 Cart Management
@@ -122,6 +125,9 @@ export const authApi = {
   createWarehouse: (data: { name: string; location?: string; description?: string; warehouseIcon?: string; capacity?: number }) => api.post('/auth/warehouse', data),
   updateWarehouse: (data: { name?: string; location?: string }) => api.put('/auth/warehouse', data),
   deleteWarehouse: () => api.delete('/auth/warehouse'),
+  getPendingWarehouses: () => api.get('/auth/warehouses/pending'),
+  approveWarehouse: (id: number) => api.put(`/auth/warehouses/${id}/approve`),
+  rejectWarehouse: (id: number) => api.put(`/auth/warehouses/${id}/reject`),
   getWarehouse: () => api.get('/auth/warehouse'),
   getWarehouseProducts: () => api.get('/auth/warehouse-products'),
   createWarehouseProduct: (data: { name: string; description?: string; price: number; stock: number; warehouseId: number }) => api.post('/auth/warehouse-products', data),
