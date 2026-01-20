@@ -7,7 +7,7 @@ import { authApi } from '../../../lib/api/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '../../../lib/hooks';
-import { useAuth, useRoleRequest } from '../hooks/useAuth';
+import { useAuth, useRoleRequest } from '@/hooks/useAuth';
 import { useEffect } from 'react';
 import { verifyToken, fetchRoleRequests, logout } from '../../../lib/store/slices/authSlice';
 import { RootState } from '../../../lib/store';
