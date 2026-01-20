@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi } from '../../lib/api/auth';
+import { authApi } from '../lib/api/auth';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 
@@ -39,12 +39,13 @@ export const useAuth = () => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      verifyToken();
-    } else {
-      setLoading(false);
-    }
+    // const token = localStorage.getItem('token');
+    // // const token = Cookies.get('token');
+    // if (token) {
+    //   verifyToken();
+    // } else {
+    //   setLoading(false);
+    // }
   }, []);
 
   return { user, loading, logout };

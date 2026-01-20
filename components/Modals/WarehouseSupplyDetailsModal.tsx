@@ -130,9 +130,7 @@ export function WarehouseSupplyDetailsModal({ open, onOpenChange, warehouse }: W
                     color:
                       warehouse.status === "active"
                         ? themeConfig.colors.success
-                        : themeConfig.colors
-                          ? themeConfig.colors.success
-                          : themeConfig.colors.warning,
+                        : themeConfig.colors.warning,
                   }}
                 >
                   {warehouse.status?.toUpperCase()}

@@ -55,7 +55,7 @@
 
 // lib/store/slices/customerSlice.ts
 import { combineReducers, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { authApi } from '../../../lib/api/auth';
+import { authApi } from '../../api/auth';
 import { toast } from 'react-toastify';
 
 // Product Sub-Slice

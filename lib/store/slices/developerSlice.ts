@@ -1,6 +1,6 @@
 // lib/store/slices/developerSlice.ts
 import { combineReducers, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { authApi } from '../../../lib/api/auth';
+import { authApi } from '../../api/auth';
 import { toast } from 'react-toastify';
 
 // Role Requests Sub-Slice

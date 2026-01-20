@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authApi } from '../../../../../lib/api/auth';
-import { useAuth } from '../../../../../app/hooks/useAuth';
+import { useAuth } from '../../../../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 

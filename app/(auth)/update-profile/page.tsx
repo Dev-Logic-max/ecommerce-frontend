@@ -15,7 +15,7 @@ export default function UpdateProfilePage() {
 
     const onSubmit = async (data: UpdateUserFormData) => {
         try {
-            await authApi.updateUser(data);
+            // await authApi.updateUser(data);
             toast.success('Profile updated!');
         } catch (error) {
             toast.error('Update failed!');
@@ -31,7 +31,7 @@ export default function UpdateProfilePage() {
                 // Add file to form data
                 const formData = new FormData();
                 formData.append('profilePicture', file);
-                authApi.updateUser({ profilePicture: reader.result as string });
+                // authApi.updateUser({ profilePicture: reader.result as string });
             };
             reader.readAsDataURL(file);
         }

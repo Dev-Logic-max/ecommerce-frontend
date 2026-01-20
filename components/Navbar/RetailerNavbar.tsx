@@ -35,7 +35,11 @@ import {
   FiPackage,
 } from "react-icons/fi"
 
-export default function RetailerNavbar() {
+interface RetailerNavbarProps {
+  onToggleSidebar: () => void
+}
+
+export default function RetailerNavbar({ onToggleSidebar }: RetailerNavbarProps) {
   const { themeConfig } = useAdminTheme()
   const [searchQuery, setSearchQuery] = useState("")
   const [newShopModalOpen, setNewShopModalOpen] = useState(false)
@@ -52,8 +56,30 @@ export default function RetailerNavbar() {
       }}
     >
       <div className="flex h-16 items-center justify-between px-6">
-        {/* Left Section - Search */}
+        {/* Left Section - Menu Toggle + Search */}
         <div className="flex items-center gap-4 flex-1 max-w-md">
+          {/* Hamburger Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            className="lg:hidden transition-all duration-200 hover:scale-110"
+            style={{
+              color: themeConfig.colors.foreground,
+            }}
+          >
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </Button>
           <div className="relative w-full">
             <FiSearch
               className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 opacity-50"

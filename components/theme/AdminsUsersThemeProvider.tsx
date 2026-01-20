@@ -84,6 +84,11 @@ export function AdminsUsersThemeProvider({ children, storagePrefix = "admin-user
         root.style.setProperty(`--admin-${key}`, value)
       })
 
+      // Apply modal-specific colors
+      Object.entries(themeConfig.modal).forEach(([key, value]) => {
+        root.style.setProperty(`--admin-modal-${key}`, value)
+      })
+
       // Apply gradients and effects
       root.style.setProperty("--admin-theme-gradient", themeConfig.gradient)
       root.style.setProperty("--admin-secondary-gradient", themeConfig.secondaryGradient)

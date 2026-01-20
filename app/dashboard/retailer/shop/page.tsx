@@ -38,15 +38,26 @@ import {
   FiAlertCircle,
   FiCheckCircle,
   FiXCircle,
+  FiPackage,
 } from "react-icons/fi"
+import { FcShop } from "react-icons/fc";
+import { DeleteShopModal } from "@/components/Modals/DeleteShopModal"
+import { UpdateShopModal } from "@/components/Modals/UpdateShopModal"
+import { ViewShopModal } from "@/components/Modals/ViewShopModal"
 
 // Mock data
 const mockShops = [
   {
     id: 1,
     name: "Tech Paradise",
+    description: "Your one-stop shop for the latest smartphones, laptops, and smart gadgets.",
     category: "electronics",
-    status: "active",
+    subcategories: [
+      "Smart Phones",
+      "Laptops",
+      "Accessories"
+    ],
+    status: "approved",
     address: "123 Tech Street, Silicon Valley, CA 94025",
     phone: "(555) 123-4567",
     email: "contact@techparadise.com",
@@ -63,7 +74,11 @@ const mockShops = [
   {
     id: 2,
     name: "Fashion Hub",
+    description: "",
     category: "fashion",
+    subcategories: [
+      "LV Bag"
+    ],
     status: "active",
     address: "456 Style Avenue, New York, NY 10001",
     phone: "(555) 987-6543",
@@ -81,7 +96,9 @@ const mockShops = [
   {
     id: 3,
     name: "Home Essentials",
+    description: "",
     category: "home",
+    subcategories: [],
     status: "pending",
     address: "789 Home Street, Austin, TX 78701",
     phone: "(555) 456-7890",
@@ -110,6 +127,17 @@ export default function ShopManagementPage() {
   const [deleteShopModal, setDeleteShopModal] = useState<any>(null)
   const [deleteConfirmStep, setDeleteConfirmStep] = useState(1)
 
+
+  const [updateShopModalOpen, setUpdateShopModalOpen] = useState(false)
+  const [viewShopModalOpen, setViewShopModalOpen] = useState(false)
+  const [deleteShopModalOpen, setDeleteShopModalOpen] = useState(false)
+  const [selectedShop, setSelectedShop] = useState<any | null>(null)
+
+  const handleViewShop = (shop: any) => {
+    setSelectedShop(shop)
+    setViewShopModalOpen(true)
+  }
+
   const shopCategories = [
     { value: "electronics", label: "📱 Electronics" },
     { value: "fashion", label: "👗 Fashion" },
@@ -124,20 +152,56 @@ export default function ShopManagementPage() {
   ]
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "active":
-        return themeConfig.colors.success
+        return {
+          color: themeConfig.colors.success,
+          background: themeConfig.colors.successLight,
+          border: "rgba(185, 248, 207, 1)", // #b9f8cf (green-200)
+          hoverBackground: "rgba(220, 252, 231, 1)", // #dcfce7 (green-100)
+        }
       case "pending":
-        return themeConfig.colors.warning
+        return {
+          color: themeConfig.colors.warning,
+          background: themeConfig.colors.warningLight,
+          border: "rgba(255, 240, 133, 1)", // #fff085 (yellow-200)
+          hoverBackground: "rgba(254, 249, 194, 1)", // #fef9c2 (yellow-100)
+        }
+      case "suspended":
       case "inactive":
-        return themeConfig.colors.danger
+        return {
+          color: themeConfig.colors.danger,
+          background: themeConfig.colors.dangerLight,
+          border: "rgba(254, 202, 202, 1)", // #fecaca (red-200)
+          hoverBackground: "rgba(255, 226, 226, 1)", // #ffe2e2 (red-100)
+        }
       default:
-        return themeConfig.colors.foreground
+        return {
+          color: "rgba(25, 60, 184, 1)",
+          background: "rgba(219, 234, 254, 0.6)",
+          border: "rgba(191, 219, 254, 1)", // #bfdbfe (blue-200)
+          hoverBackground: "rgba(219, 234, 254, 1)", // #dbeafe (blue-100)
+        }
+    }
+  }
+
+  const getStatusColorV0 = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "suspended":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "inactive":
+        return "bg-gray-100 text-gray-800 border-gray-200"
+      default:
+        return "bg-blue-100 text-blue-800 border-blue-200"
     }
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "active":
         return <FiCheckCircle className="h-4 w-4" />
       case "pending":
@@ -319,9 +383,12 @@ export default function ShopManagementPage() {
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <CardTitle style={{ color: themeConfig.colors.foreground }}>Shop Directory</CardTitle>
+              <CardTitle style={{ color: themeConfig.colors.foreground }} className="flex items-center gap-3 text-xl">
+                <FcShop className="h-8 w-8" />
+                Shop Directory
+              </CardTitle>
               <CardDescription style={{ color: `${themeConfig.colors.foreground}70` }}>
-                Manage and monitor all your retail shops
+                Manage all your retail shops and monitor their performance
               </CardDescription>
             </div>
 
@@ -333,7 +400,7 @@ export default function ShopManagementPage() {
                   placeholder="Search shops..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-96"
                   style={{
                     backgroundColor: themeConfig.colors.background,
                     borderColor: themeConfig.colors.border,
@@ -350,19 +417,6 @@ export default function ShopManagementPage() {
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {shopCategories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -383,60 +437,114 @@ export default function ShopManagementPage() {
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-6">
-              <div className="rounded-lg border overflow-hidden">
+              <div className="rounded-lg border overflow-hidden" style={{ borderColor: themeConfig.colors.borderHover }}>
                 <Table>
                   <TableHeader>
-                    <TableRow style={{ backgroundColor: `${themeConfig.colors.muted}50` }}>
+                    <TableRow style={{ backgroundColor: `${themeConfig.colors.muted}`, borderColor: themeConfig.colors.borderHover }}>
                       <TableHead style={{ color: themeConfig.colors.foreground }}>Shop Details</TableHead>
                       <TableHead style={{ color: themeConfig.colors.foreground }}>Category</TableHead>
                       <TableHead style={{ color: themeConfig.colors.foreground }}>Status</TableHead>
                       <TableHead style={{ color: themeConfig.colors.foreground }}>Performance</TableHead>
-                      <TableHead style={{ color: themeConfig.colors.foreground }}>Capacity</TableHead>
+                      <TableHead style={{ color: themeConfig.colors.foreground }}>Products</TableHead>
                       <TableHead style={{ color: themeConfig.colors.foreground }}>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredShops.map((shop) => (
-                      <TableRow key={shop.id} className="hover:bg-muted/50 transition-colors">
-                        <TableCell>
+                      <TableRow key={shop.id} className={`hover:${themeConfig.colors.muted} transition-colors`} style={{ borderColor: themeConfig.colors.border }}>
+                        <TableCell className="w-0">
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-10 h-10 rounded-lg flex items-center justify-center"
-                              style={{ backgroundColor: `${themeConfig.colors.primary}20` }}
+                              className="p-3 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: `${themeConfig.colors.primaryLight}` }}
                             >
                               <FiShoppingBag className="h-5 w-5" style={{ color: themeConfig.colors.primary }} />
                             </div>
                             <div>
-                              <p className="font-medium" style={{ color: themeConfig.colors.foreground }}>
+                              <p className="font-medium text-base" style={{ color: themeConfig.colors.foreground, textShadow: themeConfig.textShadow }}>
                                 {shop.name}
                               </p>
-                              <p className="text-sm opacity-70" style={{ color: themeConfig.colors.foreground }}>
-                                {shop.address.split(",")[0]}
-                              </p>
+
+                              {/* <p className="text-sm" style={{ color: themeConfig.colors.foreground }}> */}
+                              {/* {shop.address.split(",")[0]} */}
+                              {/* <Badge variant="default" className="text-xs">
+                                  {shopCategories.find((c) => c.value === shop.category)?.label}
+                                </Badge> */}
+                              {/* </p> */}
+
+                              {shop.description ? (<p className="text-xs opacity-70" style={{ color: themeConfig.colors.foreground }}>
+                                {shop.description.substring(0, 40)}...
+                              </p>) : (<></>)}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">
-                            {shopCategories.find((c) => c.value === shop.category)?.label}
-                          </Badge>
+                          <div className="flex items-center gap-2" style={{ color: themeConfig.colors.foreground }}>
+                            <span className="text-xl">
+                              {shopCategories.find((c) => c.value === shop.category)?.label.split(" ")[0]}
+                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-semibold">
+                                {shopCategories.find((c) => c.value === shop.category)?.label.substring(2)}
+                              </span>
+                              {/* {shop.subcategories.length > 0 ?
+                                (<div className="flex flex-wrap gap-1">
+                                  {shop.subcategories.map((sub, index) => (
+                                    <Badge key={index} variant="secondary" className="text-[10px]" style={{
+                                      backgroundColor: "var(--admin-modal-badgeLight)",
+                                      color: "var(--admin-modal-primary)",
+                                      border: `1px solid var(--admin-modal-borderLight)`,
+                                    }}>
+                                      {sub}
+                                    </Badge>
+                                  ))}
+                                </div>) : (<></>)
+                              } */}
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div style={{ color: getStatusColor(shop.status) }}>{getStatusIcon(shop.status)}</div>
-                            <span className="font-medium capitalize" style={{ color: getStatusColor(shop.status) }}>
-                              {shop.status}
-                            </span>
+                          <div>
+                            {(() => {
+                              const [isHovering, setIsHovering] = useState(false);
+                              const statusColor = getStatusColor(shop.status);
+
+                              return (
+                                <Badge
+                                  className={`border font-medium capitalize py-1 px-2 transition-colors duration-200`}
+                                  style={{
+                                    color: statusColor.color,
+                                    backgroundColor: isHovering ? statusColor.hoverBackground : statusColor.background,
+                                    borderColor: statusColor.border,
+                                  }}
+                                  onMouseEnter={() => setIsHovering(true)}
+                                  onMouseLeave={() => setIsHovering(false)}
+                                >
+                                  <span style={{ color: statusColor.color }}>{getStatusIcon(shop.status)}</span>
+                                  {shop.status}
+                                </Badge>
+                              );
+                            })()}
                           </div>
+                          {/* <div>
+                            <Badge className={`border  font-medium capitalize py-1 transition-colors duration-200`} style={{
+                              color: getStatusColor(shop.status).color,
+                              backgroundColor: getStatusColor(shop.status).background,
+                              borderColor: getStatusColor(shop.status).border,
+                            }}>
+                              <span style={{ color: getStatusColor(shop.status).color }}>{getStatusIcon(shop.status)}</span>
+                              {shop.status}
+                            </Badge>
+                          </div> */}
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <FiDollarSign className="h-3 w-3" />
-                              <span className="text-sm">${shop.monthlyRevenue.toLocaleString()}</span>
+                              <FiDollarSign className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium text-green-600">{shop.monthlyRevenue.toLocaleString()}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <FiStar className="h-3 w-3" />
+                              <FiStar className="h-4 w-4 text-yellow-500" />
                               <span className="text-sm">
                                 {shop.rating} ({shop.orders} orders)
                               </span>
@@ -445,10 +553,17 @@ export default function ShopManagementPage() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="text-sm">
-                              Products: {shop.currentProducts}/{shop.productCapacity}
+
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                              <FiPackage className="h-4 w-4 text-gray-500" />
+                              {shop.currentProducts}
                             </div>
-                            <div className="w-20 bg-gray-200 rounded-full h-1">
+
+                            {/* <div className="flex items-center gap-1 text-sm">
+                              <FiPackage className="h-4 w-4 text-gray-400" />
+                              Products: {shop.currentProducts}/{shop.productCapacity}
+                            </div> */}
+                            {/* <div className="w-20 bg-gray-200 rounded-full h-1">
                               <div
                                 className="h-1 rounded-full"
                                 style={{
@@ -456,16 +571,17 @@ export default function ShopManagementPage() {
                                   backgroundColor: themeConfig.colors.primary,
                                 }}
                               />
-                            </div>
+                            </div> */}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setViewShopModal(shop)}
-                              className="h-8 w-8"
+                              // onClick={() => setViewShopModal(shop)}
+                              onClick={() => handleViewShop(shop)}
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
                               <FiEye className="h-4 w-4" />
                             </Button>
@@ -473,7 +589,7 @@ export default function ShopManagementPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => setEditShopModal(shop)}
-                              className="h-8 w-8"
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                             >
                               <FiEdit3 className="h-4 w-4" />
                             </Button>
@@ -481,7 +597,7 @@ export default function ShopManagementPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteShop(shop)}
-                              className="h-8 w-8 text-red-500 hover:text-red-700"
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <FiTrash2 className="h-4 w-4" />
                             </Button>
@@ -496,6 +612,14 @@ export default function ShopManagementPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {selectedShop && (
+        <>
+          <ViewShopModal shop={selectedShop} open={viewShopModalOpen} onOpenChange={setViewShopModalOpen} />
+          <UpdateShopModal shop={selectedShop} open={updateShopModalOpen} onOpenChange={setUpdateShopModalOpen} />
+          <DeleteShopModal shop={selectedShop} open={deleteShopModalOpen} onOpenChange={setDeleteShopModalOpen} />
+        </>
+      )}
 
       {/* View Shop Modal */}
       <Dialog open={!!viewShopModal} onOpenChange={() => setViewShopModal(null)}>
@@ -526,10 +650,10 @@ export default function ShopManagementPage() {
                       <div>
                         <Label className="text-xs text-gray-500">Status</Label>
                         <div className="flex items-center gap-2 mt-1">
-                          <div style={{ color: getStatusColor(viewShopModal.status) }}>
+                          <div style={{ color: getStatusColor(viewShopModal.status).color }}>
                             {getStatusIcon(viewShopModal.status)}
                           </div>
-                          <span className="capitalize" style={{ color: getStatusColor(viewShopModal.status) }}>
+                          <span className="capitalize" style={{ color: getStatusColor(viewShopModal.status).color }}>
                             {viewShopModal.status}
                           </span>
                         </div>

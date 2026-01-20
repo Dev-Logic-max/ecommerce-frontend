@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi } from '../../../lib/api/auth';
+import { authApi } from '../../ecommerce-frontend/lib/api/auth';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';

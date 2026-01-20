@@ -32,7 +32,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "react-toastify"
 import authApi from "@/lib/api/auth"
-import { useAuth } from "@/app/hooks/useAuth"
+import { useAuth } from "@/hooks/useAuth"
 
 interface User {
   id: number;
@@ -766,14 +766,7 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {
-                    // [
-                    //   { title: "Email Notifications", description: "Receive email updates", enabled: true },
-                    //   { title: "Push Notifications", description: "Browser notifications", enabled: false },
-                    //   { title: "Dark Mode", description: "Use dark theme", enabled: false },
-                    //   { title: "Auto Save", description: "Automatically save changes", enabled: true },
-                    // ]
-                    preferences.map((pref, index) => (
+                    {preferences.map((pref, index) => (
                       <div
                         key={index}
                         className="p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-lg"

@@ -3,7 +3,6 @@
 import { ToastContainer } from 'react-toastify';
 // import "react-toastify/dist/ReactToastify.css";
 import "../../globals.css";
-import Navbar from "@/components/common/Navbar";
 import { AdminsThemeProvider } from "@/components/theme/AdminsThemeProvider";
 import { DeveloperNavbar } from "@/components/Navbar/DeveloperNavbar";
 import { DeveloperSidebar } from "@/components/Sidebar/DeveloperSidebar";

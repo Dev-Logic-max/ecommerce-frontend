@@ -1,3 +1,4 @@
+import { CreateShopData, UpdateShopData } from '@/types/shop';
 import axios, { AxiosResponse } from 'axios'
 import Cookies from 'js-cookie'
 import { toast } from 'react-toastify';
@@ -22,6 +23,7 @@ api.interceptors.request.use(
       return config;
     }
     const token = Cookies.get('token') || localStorage.getItem('token');
+    // const token = Cookies.get('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -71,9 +73,8 @@ export const authApi = {
   rejectRole: (id: number) => api.post(`/auth/role/reject/${id}`),
 
   // 🏪 Shop Management
-  createShop: (data: { name: string; description?: string }) => api.post('/auth/create-shop', data),
-  updateShop: (id: number, data: { name?: string; description?: string }) =>
-    api.patch(`/auth/update-shop/${id}`, data),
+  createShop: (data: CreateShopData) => api.post('/shop/create-shop', data),
+  updateShop: (id: number, data: UpdateShopData) => api.patch(`/shop/update-shop/${id}`, data),
   deleteShop: (id: number) => api.delete(`/auth/delete-shop/${id}`),
   getUserShops: () => api.get('/auth/shops'),
   getPendingShops: () => api.get('/auth/shops/pending'),
@@ -105,7 +106,7 @@ export const authApi = {
 
   // 🗂️ Category Management
   getCategories: () => api.get('/auth/categories'),
-  createCategory: (data: { id: number, name: string }) => api.post('/auth/categories', data),
+  createCategory: (data: { name: string }) => api.post('/auth/categories', data),
   updateCategory: (id: number, data: { id: number, name: string }) => api.put(`/auth/categories/${id}`, data),
   deleteCategory: (id: number) => api.delete(`/auth/categories/${id}`),
 

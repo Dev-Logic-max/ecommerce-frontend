@@ -2,13 +2,12 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useAdminTheme } from "@/components/theme/AdminsUsersThemeProvider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -40,62 +39,78 @@ import {
   FiShield,
   FiArrowRight,
   FiArrowLeft,
-  FiCalendar,
-  FiClock,
-  FiAlertCircle,
+  FiUpload,
+  FiImage,
+  FiEdit3,
 } from "react-icons/fi"
 import { toast } from "react-toastify"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import authApi from "@/lib/api/auth"
 
-interface NewShopModalProps {
+interface Shop {
+  id: string | number
+  name: string
+  description: string
+  category: string
+  subcategories: string[]
+  icon?: string
+  address: string
+  city: string
+  state: string
+  zipCode: string
+  phone: string
+  email: string
+  businessLicense: string
+  taxId: string
+  spaceCapacity: string | number
+  productCapacity: string | number
+  features: {
+    onlineOrdering: boolean
+    deliveryService: boolean
+    pickupService: boolean
+    returnPolicy: boolean
+    customerSupport: boolean
+    loyaltyProgram: boolean
+  }
+}
+
+interface UpdateShopModalProps {
+  shop: Shop
   trigger?: React.ReactNode
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
 
-export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps) {
+export function UpdateShopModal({ shop, trigger, open, onOpenChange }: UpdateShopModalProps) {
   const { themeConfig } = useAdminTheme()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [shopIcon, setShopIcon] = useState<string | null>(shop.icon || null)
 
   const [shopData, setShopData] = useState({
     // Basic Info
-    name: "",
-    description: "",
-    category: "",
-    subcategories: [] as string[],
+    name: shop.name,
+    description: shop.description,
+    category: shop.category,
+    subcategories: [...shop.subcategories],
+    icon: null as File | null,
 
     // Location & Contact
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    phone: "",
-    email: "",
+    address: shop.address,
+    city: shop.city,
+    state: shop.state,
+    zipCode: shop.zipCode,
+    phone: shop.phone,
+    email: shop.email,
 
     // Business Details
-    businessLicense: "",
-    taxId: "",
-    spaceCapacity: "",
-    productCapacity: "",
+    businessLicense: shop.businessLicense,
+    taxId: shop.taxId,
+    spaceCapacity: shop.spaceCapacity,
+    productCapacity: shop.productCapacity,
 
     // Features
-    features: {
-      onlineOrdering: false,
-      deliveryService: false,
-      pickupService: false,
-      returnPolicy: false,
-      customerSupport: false,
-      loyaltyProgram: false,
-    },
-
-    // Policies
-    returnPolicy: "",
-    shippingPolicy: "",
-    privacyPolicy: "",
-
-    progress: 0,
+    features: { ...shop.features },
   })
 
   const shopCategories = [
@@ -251,56 +266,41 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
     },
   ]
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true)
-    try {
-      // await new Promise((resolve) => setTimeout(resolve, 2000))
-      const response = await authApi.createShop({
-      ...shopData,
-      features: JSON.stringify(shopData.features), // Convert to string for API
-      progress: calculateProgress(), // Add progress
-    });
-      console.log("Shop created:", response.data)
-      toast.success("Shop created successfully!" + response.data.id) // Display real ID 
-      onOpenChange?.(false)
-      resetForm()
-    } catch (error: any) {
-      toast.error("Failed to create shop: " + (error.response?.data?.message || error.message));
-    } finally {
-      setIsSubmitting(false)
+  const handleIconUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size should be less than 5MB")
+        return
+      }
+
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file")
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setShopIcon(e.target?.result as string)
+        setShopData({ ...shopData, icon: file })
+        toast.success("Shop icon updated successfully!")
+      }
+      reader.readAsDataURL(file)
     }
   }
 
-  const resetForm = () => {
-    setCurrentStep(1)
-    setShopData({
-      name: "",
-      description: "",
-      category: "",
-      subcategories: [],
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      phone: "",
-      email: "",
-      businessLicense: "",
-      taxId: "",
-      spaceCapacity: "",
-      productCapacity: "",
-      features: {
-        onlineOrdering: false,
-        deliveryService: false,
-        pickupService: false,
-        returnPolicy: false,
-        customerSupport: false,
-        loyaltyProgram: false,
-      },
-      returnPolicy: "",
-      shippingPolicy: "",
-      privacyPolicy: "",
-      progress: 0,
-    })
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      console.log("Shop updated:", shopData)
+      toast.success("Shop updated successfully!")
+      onOpenChange?.(false)
+    } catch (error) {
+      toast.error("Failed to update shop")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const steps = [
@@ -309,21 +309,21 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
       title: "Basic Info",
       subtitle: "Shop details",
       icon: <FiShoppingBag className="h-5 w-5" />,
-      description: "Enter your shop's basic information and category",
+      description: "Update your shop's basic information",
     },
     {
       id: 2,
       title: "Location",
       subtitle: "Address & Contact",
       icon: <FiMapPin className="h-5 w-5" />,
-      description: "Provide your shop's location and contact details",
+      description: "Update your shop's location and contact details",
     },
     {
       id: 3,
       title: "Business",
       subtitle: "Legal & Capacity",
       icon: <FiDollarSign className="h-5 w-5" />,
-      description: "Business registration and capacity information",
+      description: "Update business registration and capacity information",
     },
     {
       id: 4,
@@ -337,7 +337,7 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
       title: "Review",
       subtitle: "Final Check",
       icon: <FiCheck className="h-5 w-5" />,
-      description: "Review and confirm all details before submission",
+      description: "Review and confirm all changes before updating",
     },
   ]
 
@@ -375,28 +375,28 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
     let totalFields = 0
     let filledFields = 0
 
-    // Basic Info fields
-    totalFields += 4
-    if (shopData.name.trim()) filledFields++
-    if (shopData.description.trim()) filledFields++
-    if (shopData.category) filledFields++
-    if (shopData.subcategories.length > 0) filledFields++
+    // // Basic Info fields
+    // totalFields += 4
+    // if (shopData.name.trim()) filledFields++
+    // if (shopData.description.trim()) filledFields++
+    // if (shopData.subcategories.length > 0) filledFields++
+    // if (shopIcon) filledFields++
 
-    // Location fields
-    totalFields += 6
-    if (shopData.address.trim()) filledFields++
-    if (shopData.city.trim()) filledFields++
-    if (shopData.state.trim()) filledFields++
-    if (shopData.zipCode.trim()) filledFields++
-    if (shopData.phone.trim()) filledFields++
-    if (shopData.email.trim()) filledFields++
+    // // Location fields
+    // totalFields += 6
+    // if (shopData.address.trim()) filledFields++
+    // if (shopData.city.trim()) filledFields++
+    // if (shopData.state.trim()) filledFields++
+    // if (shopData.zipCode.trim()) filledFields++
+    // if (shopData.phone.trim()) filledFields++
+    // if (shopData.email.trim()) filledFields++
 
-    // Business fields
-    totalFields += 4
-    if (shopData.businessLicense.trim()) filledFields++
-    if (shopData.taxId.trim()) filledFields++
-    if (shopData.spaceCapacity.trim()) filledFields++
-    if (shopData.productCapacity.trim()) filledFields++
+    // // Business fields
+    // totalFields += 4
+    // if (shopData.businessLicense.trim()) filledFields++
+    // if (shopData.taxId.trim()) filledFields++
+    // if (shopData.spaceCapacity.trim()) filledFields++
+    // if (shopData.productCapacity.trim()) filledFields++
 
     // Features (count enabled features)
     totalFields += Object.keys(shopData.features).length
@@ -426,15 +426,15 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                     color: "white",
                   }}
                 >
-                  <FiShoppingBag className="h-7 w-7" />
+                  <FiEdit3 className="h-7 w-7" />
                 </div>
                 <div>
-                  <div style={{ color: "var(--admin-modal-text)" }}>Create New Shop</div>
+                  <div style={{ color: "var(--admin-modal-text)" }}>Update Shop</div>
                   <DialogDescription
                     className="text-base mt-1 font-normal"
                     style={{ color: "var(--admin-modal-textSecondary)" }}
                   >
-                    Set up your new shop with all the necessary details and configurations
+                    Update your shop details and configurations
                   </DialogDescription>
                 </div>
               </DialogTitle>
@@ -545,10 +545,76 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                       Basic Shop Information
                     </CardTitle>
                     <CardDescription style={{ color: "var(--admin-modal-textSecondary)" }}>
-                      Start with the basic details about your shop
+                      Update the basic details about your shop
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Shop Icon Upload */}
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="shopIcon"
+                        className="text-sm font-medium flex items-center gap-2"
+                        style={{ color: "var(--admin-modal-text)" }}
+                      >
+                        <FiImage className="h-4 w-4" />
+                        Shop Icon
+                      </Label>
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-20 h-20 rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-opacity-50 transition-all duration-300"
+                          style={{
+                            borderColor: "var(--admin-modal-border)",
+                            backgroundColor: shopIcon ? "transparent" : "var(--admin-modal-muted)",
+                          }}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {shopIcon ? (
+                            <img
+                              src={shopIcon || "/placeholder.svg"}
+                              alt="Shop Icon"
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="text-center">
+                              <FiUpload
+                                className="h-6 w-6 mx-auto mb-1"
+                                style={{ color: "var(--admin-modal-textMuted)" }}
+                              />
+                              <span className="text-xs" style={{ color: "var(--admin-modal-textMuted)" }}>
+                                Upload
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full"
+                            style={{
+                              borderColor: "var(--admin-modal-primary)",
+                              color: "var(--admin-modal-primary)",
+                              backgroundColor: "transparent",
+                            }}
+                          >
+                            <FiUpload className="mr-2 h-4 w-4" />
+                            Update Shop Icon
+                          </Button>
+                          <p className="text-xs mt-1" style={{ color: "var(--admin-modal-textMuted)" }}>
+                            PNG, JPG up to 5MB. Recommended: 200x200px
+                          </p>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleIconUpload}
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label
                         htmlFor="shopName"
@@ -603,51 +669,30 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                         style={{ color: "var(--admin-modal-text)" }}
                       >
                         <FiPackage className="h-4 w-4" />
-                        Category
+                        Category (Cannot be changed)
                       </Label>
-                      <Select
-                        value={shopData.category}
-                        onValueChange={(value) => setShopData({ ...shopData, category: value })}
+                      <div
+                        className="p-3 rounded-lg border-2 bg-gray-50"
+                        style={{
+                          backgroundColor: "var(--admin-modal-muted)",
+                          borderColor: "var(--admin-modal-border)",
+                          color: "var(--admin-modal-textMuted)",
+                        }}
                       >
-                        <SelectTrigger
-                          style={{
-                            backgroundColor: "var(--admin-modal-input)",
-                            borderColor: "var(--admin-modal-inputBorder)",
-                            color: "var(--admin-modal-text)",
-                          }}
-                          className="w-full focus:ring-2"
-                        >
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent
-                          style={{
-                            backgroundColor: "var(--admin-modal-card)",
-                            borderColor: "var(--admin-modal-border)",
-                          }}
-                        >
-                          {shopCategories.map((cat) => (
-                            <SelectItem
-                              key={cat.value}
-                              value={cat.value}
-                              style={{
-                                backgroundColor: "var(--admin-modal-card)",
-                                color: "var(--admin-modal-text)",
-                              }}
-                              className="hover:bg-opacity-80"
-                            >
-                              <div className="flex items-center gap-3 py-1">
-                                <span className="text-lg">{cat.label.split(" ")[0]}</span>
-                                <div>
-                                  <div className="font-medium">{cat.label.substring(2)}</div>
-                                  <div className="text-xs" style={{ color: "var(--admin-modal-textMuted)" }}>
-                                    {cat.description}
-                                  </div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        {selectedCategory && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">{selectedCategory.label.split(" ")[0]}</span>
+                            <div>
+                              <div className="font-medium">{selectedCategory.label.substring(2)}</div>
+                              <div className="text-xs">{selectedCategory.description}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs" style={{ color: "var(--admin-modal-textMuted)" }}>
+                        Category cannot be changed after shop creation. Contact support if you need to change the main
+                        category.
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -759,7 +804,7 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                       Location & Contact Information
                     </CardTitle>
                     <CardDescription style={{ color: "var(--admin-modal-textSecondary)" }}>
-                      Provide your shop's location and contact details
+                      Update your shop's location and contact details
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -915,7 +960,7 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                       Business Details & Capacity
                     </CardTitle>
                     <CardDescription style={{ color: "var(--admin-modal-textSecondary)" }}>
-                      Business registration and capacity information
+                      Update business registration and capacity information
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1078,7 +1123,7 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                       Features & Services
                     </CardTitle>
                     <CardDescription style={{ color: "var(--admin-modal-textSecondary)" }}>
-                      Configure your shop's features and services
+                      Update your shop's features and services
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -1135,7 +1180,6 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                                   features: { ...shopData.features, [key]: checked },
                                 })
                               }
-                              className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300"
                             />
                           </div>
                         ))}
@@ -1146,400 +1190,236 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
               </div>
             )}
 
-            {/* Step 5: Enhanced Review */}
+            {/* Step 5: Review */}
             {currentStep === 5 && (
               <div className="space-y-6">
-                {/* Header Card */}
                 <Card
-                  className="border-2 shadow-lg"
                   style={{
                     backgroundColor: "var(--admin-modal-card)",
-                    borderColor: "var(--admin-modal-borderLight)",
+                    borderColor: "var(--admin-modal-border)",
                   }}
                 >
-                  <CardHeader className="text-center pb-4">
-                    <div className="flex justify-center mb-4">
-                      <div
-                        className="p-4 rounded-full"
-                        style={{
-                          background: themeConfig.gradient,
-                          color: "white",
-                        }}
-                      >
-                        <FiCheckCircle className="h-8 w-8" />
+                  <CardHeader className="gap-0">
+                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: "var(--admin-modal-text)" }}>
+                      <div className="p-2 rounded-lg" style={{ backgroundColor: "var(--admin-modal-primaryLight)" }}>
+                        <FiCheck className="h-5 w-5" style={{ color: "var(--admin-modal-primary)" }} />
                       </div>
-                    </div>
-                    <CardTitle className="text-2xl" style={{ color: "var(--admin-modal-text)" }}>
-                      Review Shop Details
+                      Review & Confirm Changes
                     </CardTitle>
-                    <CardDescription className="text-base" style={{ color: "var(--admin-modal-textSecondary)" }}>
-                      Please review all information before creating your shop
+                    <CardDescription style={{ color: "var(--admin-modal-textSecondary)" }}>
+                      Review all changes before updating your shop
                     </CardDescription>
                   </CardHeader>
-                </Card>
-
-                {/* Shop Summary Card */}
-                <Card
-                  className="border-2 shadow-lg"
-                  style={{
-                    backgroundColor: "var(--admin-modal-card)",
-                    borderColor: "var(--admin-modal-borderLight)",
-                  }}
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3" style={{ color: "var(--admin-modal-text)" }}>
-                      <FiShoppingBag className="h-5 w-5" />
-                      Shop Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-start gap-6">
-                      {selectedCategory && (
+                  <CardContent className="space-y-6">
+                    {/* Shop Preview */}
+                    <div
+                      className="p-6 rounded-xl border-2"
+                      style={{
+                        backgroundColor: "var(--admin-modal-highlight)",
+                        borderColor: "var(--admin-modal-borderLight)",
+                      }}
+                    >
+                      <div className="flex items-start gap-4">
                         <div
-                          className="p-4 rounded-xl text-4xl"
-                          style={{ backgroundColor: "var(--admin-modal-categoryLight)" }}
+                          className="w-16 h-16 rounded-xl overflow-hidden border-2"
+                          style={{ borderColor: "var(--admin-modal-border)" }}
                         >
-                          {selectedCategory.label.split(" ")[0]}
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold mb-2" style={{ color: "var(--admin-modal-text)" }}>
-                          {shopData.name || "Unnamed Shop"}
-                        </h3>
-                        <p className="mb-3" style={{ color: "var(--admin-modal-textSecondary)" }}>
-                          {shopData.description || "No description provided"}
-                        </p>
-                        <div
-                          className="flex items-center gap-4 text-sm"
-                          style={{ color: "var(--admin-modal-textMuted)" }}
-                        >
-                          <div className="flex items-center gap-1">
-                            <FiCalendar className="h-4 w-4" />
-                            Created: {new Date().toLocaleDateString()}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <FiClock className="h-4 w-4" />
-                            {new Date().toLocaleTimeString()}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge
-                          className="px-3 py-1"
-                          style={{
-                            backgroundColor: "var(--admin-modal-warningLight)",
-                            color: "var(--admin-modal-warning)",
-                          }}
-                        >
-                          Pending Approval
-                        </Badge>
-                        <p className="text-sm mt-2" style={{ color: "var(--admin-modal-textMuted)" }}>
-                          {/* ID: #{Math.floor(Math.random() * 1000000)} */}
-                          ID: (To be created)
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Details Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Basic Information */}
-                  <Card
-                    className="border-2 shadow-lg"
-                    style={{
-                      backgroundColor: "var(--admin-modal-card)",
-                      borderColor: "var(--admin-modal-borderLight)",
-                    }}
-                  >
-                    <CardHeader>
-                      <CardTitle
-                        className="flex items-center gap-2 text-lg"
-                        style={{ color: "var(--admin-modal-text)" }}
-                      >
-                        <FiInfo className="h-5 w-5" />
-                        Basic Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-3">
-                        <div
-                          className="flex justify-between items-center py-2 border-b"
-                          style={{ borderColor: "var(--admin-modal-borderLight)" }}
-                        >
-                          <span style={{ color: "var(--admin-modal-textSecondary)" }}>Shop Name:</span>
-                          <span className="font-medium" style={{ color: "var(--admin-modal-text)" }}>
-                            {shopData.name || "Not provided"}
-                          </span>
-                        </div>
-                        <div
-                          className="flex justify-between items-center py-2 border-b"
-                          style={{ borderColor: "var(--admin-modal-borderLight)" }}
-                        >
-                          <span style={{ color: "var(--admin-modal-textSecondary)" }}>Category:</span>
-                          <span className="font-medium" style={{ color: "var(--admin-modal-text)" }}>
-                            {selectedCategory?.label.substring(2) || "Not selected"}
-                          </span>
-                        </div>
-                        <div className="py-2">
-                          <span className="block mb-2" style={{ color: "var(--admin-modal-textSecondary)" }}>
-                            Subcategories:
-                          </span>
-                          {shopData.subcategories.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {shopData.subcategories.map((sub, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="text-xs"
-                                  style={{
-                                    backgroundColor: "var(--admin-modal-badgeLight)",
-                                    color: "var(--admin-modal-text)",
-                                  }}
-                                >
-                                  {sub}
-                                </Badge>
-                              ))}
-                            </div>
+                          {shopIcon ? (
+                            <img
+                              src={shopIcon || "/placeholder.svg"}
+                              alt="Shop Icon"
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            <span className="italic" style={{ color: "var(--admin-modal-textMuted)" }}>
-                              None added
-                            </span>
+                            <div
+                              className="w-full h-full flex items-center justify-center"
+                              style={{ backgroundColor: "var(--admin-modal-muted)" }}
+                            >
+                              <FiShoppingBag className="h-6 w-6" style={{ color: "var(--admin-modal-textMuted)" }} />
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Location & Contact */}
-                  <Card
-                    className="border-2 shadow-lg"
-                    style={{
-                      backgroundColor: "var(--admin-modal-card)",
-                      borderColor: "var(--admin-modal-borderLight)",
-                    }}
-                  >
-                    <CardHeader>
-                      <CardTitle
-                        className="flex items-center gap-2 text-lg"
-                        style={{ color: "var(--admin-modal-text)" }}
-                      >
-                        <FiMapPin className="h-5 w-5" />
-                        Location & Contact
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-3">
-                        <div className="py-2 border-b" style={{ borderColor: "var(--admin-modal-borderLight)" }}>
-                          <span className="block mb-1" style={{ color: "var(--admin-modal-textSecondary)" }}>
-                            Address:
-                          </span>
-                          <span className="font-medium" style={{ color: "var(--admin-modal-text)" }}>
-                            {shopData.address || "Not provided"}
-                            {shopData.city && `, ${shopData.city}`}
-                            {shopData.state && `, ${shopData.state}`}
-                            {shopData.zipCode && ` ${shopData.zipCode}`}
-                          </span>
-                        </div>
-                        <div
-                          className="flex justify-between items-center py-2 border-b"
-                          style={{ borderColor: "var(--admin-modal-borderLight)" }}
-                        >
-                          <span
-                            className="flex items-center gap-2"
-                            style={{ color: "var(--admin-modal-textSecondary)" }}
-                          >
-                            <FiPhone className="h-4 w-4" />
-                            Phone:
-                          </span>
-                          <span className="font-medium" style={{ color: "var(--admin-modal-text)" }}>
-                            {shopData.phone || "Not provided"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                          <span
-                            className="flex items-center gap-2"
-                            style={{ color: "var(--admin-modal-textSecondary)" }}
-                          >
-                            <FiMail className="h-4 w-4" />
-                            Email:
-                          </span>
-                          <span className="font-medium" style={{ color: "var(--admin-modal-text)" }}>
-                            {shopData.email || "Not provided"}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Business Details */}
-                  <Card
-                    className="border-2 shadow-lg"
-                    style={{
-                      backgroundColor: "var(--admin-modal-card)",
-                      borderColor: "var(--admin-modal-borderLight)",
-                    }}
-                  >
-                    <CardHeader>
-                      <CardTitle
-                        className="flex items-center gap-2 text-lg"
-                        style={{ color: "var(--admin-modal-text)" }}
-                      >
-                        <FiDollarSign className="h-5 w-5" />
-                        Business Details
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-3">
-                        <div
-                          className="flex justify-between items-center py-2 border-b"
-                          style={{ borderColor: "var(--admin-modal-borderLight)" }}
-                        >
-                          <span style={{ color: "var(--admin-modal-textSecondary)" }}>Business License:</span>
-                          <span className="font-medium" style={{ color: "var(--admin-modal-text)" }}>
-                            {shopData.businessLicense || "Not provided"}
-                          </span>
-                        </div>
-                        <div
-                          className="flex justify-between items-center py-2 border-b"
-                          style={{ borderColor: "var(--admin-modal-borderLight)" }}
-                        >
-                          <span style={{ color: "var(--admin-modal-textSecondary)" }}>Tax ID:</span>
-                          <span className="font-medium" style={{ color: "var(--admin-modal-text)" }}>
-                            {shopData.taxId || "Not provided"}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold mb-2" style={{ color: "var(--admin-modal-text)" }}>
+                            {shopData.name || "Shop Name"}
+                          </h3>
+                          <p className="mb-3" style={{ color: "var(--admin-modal-textSecondary)" }}>
+                            {shopData.description || "Shop description"}
+                          </p>
+                          {selectedCategory && (
+                            <Badge
+                              className="mb-3"
+                              style={{
+                                backgroundColor: "var(--admin-modal-badgeLight)",
+                                color: "var(--admin-modal-primary)",
+                              }}
+                            >
+                              {selectedCategory.label}
+                            </Badge>
+                          )}
                           <div
-                            className="p-3 rounded-lg text-center"
-                            style={{ backgroundColor: "var(--admin-modal-infoLight)" }}
+                            className="flex items-center gap-4 text-sm"
+                            style={{ color: "var(--admin-modal-textMuted)" }}
                           >
-                            <div className="text-2xl font-bold" style={{ color: "var(--admin-modal-info)" }}>
-                              {shopData.spaceCapacity || "0"}
+                            <div className="flex items-center gap-1">
+                              <FiMapPin className="h-4 w-4" />
+                              {shopData.city && shopData.state ? `${shopData.city}, ${shopData.state}` : "Location"}
                             </div>
-                            <div className="text-sm" style={{ color: "var(--admin-modal-textSecondary)" }}>
-                              sq ft
-                            </div>
-                          </div>
-                          <div
-                            className="p-3 rounded-lg text-center"
-                            style={{ backgroundColor: "var(--admin-modal-successLight)" }}
-                          >
-                            <div className="text-2xl font-bold" style={{ color: "var(--admin-modal-success)" }}>
-                              {shopData.productCapacity || "0"}
-                            </div>
-                            <div className="text-sm" style={{ color: "var(--admin-modal-textSecondary)" }}>
-                              products
+                            <div className="flex items-center gap-1">
+                              <FiPhone className="h-4 w-4" />
+                              {shopData.phone || "Phone"}
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Features & Services */}
-                  <Card
-                    className="border-2 shadow-lg"
-                    style={{
-                      backgroundColor: "var(--admin-modal-card)",
-                      borderColor: "var(--admin-modal-borderLight)",
-                    }}
-                  >
-                    <CardHeader>
-                      <CardTitle
-                        className="flex items-center gap-2 text-lg"
-                        style={{ color: "var(--admin-modal-text)" }}
-                      >
-                        <FiStar className="h-5 w-5" />
-                        Features & Services
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-3">
-                        {Object.entries(shopData.features).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className={cn("flex items-center gap-2 p-2 rounded-lg transition-all")}
-                            style={{
-                              backgroundColor: value
-                                ? "var(--admin-modal-successLight)"
-                                : "var(--admin-modal-mutedLight)",
-                              color: value ? "var(--admin-modal-success)" : "var(--admin-modal-textMuted)",
-                            }}
-                          >
-                            {value ? (
-                              <FiCheckCircle className="h-4 w-4" style={{ color: "var(--admin-modal-success)" }} />
-                            ) : (
-                              <FiAlertCircle className="h-4 w-4" style={{ color: "var(--admin-modal-textMuted)" }} />
-                            )}
-                            <span className="text-sm font-medium">
-                              {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Confirmation Notice */}
-                <Card
-                  className="border-2"
-                  style={{
-                    backgroundColor: "var(--admin-modal-warningLight)",
-                    borderColor: "var(--admin-modal-borderLight)",
-                  }}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <FiAlertCircle className="h-6 w-6 mt-1" style={{ color: "var(--admin-modal-warning)" }} />
-                      <div>
-                        <h4 className="font-semibold mb-2" style={{ color: "var(--admin-modal-text)" }}>
-                          Important Notice
-                        </h4>
-                        <p className="text-sm leading-relaxed" style={{ color: "var(--admin-modal-textSecondary)" }}>
-                          By creating this shop, you agree to our terms of service and confirm that all provided
-                          information is accurate. Your shop will be reviewed by our team and you'll receive a
-                          confirmation email within 24-48 hours.
-                        </p>
                       </div>
                     </div>
+
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        className="p-4 rounded-lg border"
+                        style={{
+                          backgroundColor: "var(--admin-modal-infoLight)",
+                          borderColor: "var(--admin-modal-border)",
+                        }}
+                      >
+                        <h4
+                          className="font-semibold mb-3 flex items-center gap-2"
+                          style={{ color: "var(--admin-modal-text)" }}
+                        >
+                          <FiMapPin className="h-4 w-4" />
+                          Location Details
+                        </h4>
+                        <div className="space-y-2 text-sm" style={{ color: "var(--admin-modal-textSecondary)" }}>
+                          <p>{shopData.address || "Address not provided"}</p>
+                          <p>
+                            {shopData.city || "City"}, {shopData.state || "State"} {shopData.zipCode || "ZIP"}
+                          </p>
+                          <p>{shopData.email || "Email not provided"}</p>
+                        </div>
+                      </div>
+
+                      <div
+                        className="p-4 rounded-lg border"
+                        style={{
+                          backgroundColor: "var(--admin-modal-successLight)",
+                          borderColor: "var(--admin-modal-border)",
+                        }}
+                      >
+                        <h4
+                          className="font-semibold mb-3 flex items-center gap-2"
+                          style={{ color: "var(--admin-modal-text)" }}
+                        >
+                          <FiPackage className="h-4 w-4" />
+                          Capacity
+                        </h4>
+                        <div className="space-y-2 text-sm" style={{ color: "var(--admin-modal-textSecondary)" }}>
+                          <p>Space: {shopData.spaceCapacity || "0"} sq ft</p>
+                          <p>Products: {shopData.productCapacity || "0"} items</p>
+                          <p>Subcategories: {shopData.subcategories.length}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Enabled Features */}
+                    <div>
+                      <h4 className="font-semibold mb-3" style={{ color: "var(--admin-modal-text)" }}>
+                        Enabled Features
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(shopData.features)
+                          .filter(([, enabled]) => enabled)
+                          .map(([feature]) => (
+                            <Badge
+                              key={feature}
+                              className="px-3 py-1"
+                              style={{
+                                backgroundColor: "var(--admin-modal-featureLight)",
+                                color: "var(--admin-modal-success)",
+                                border: `1px solid var(--admin-modal-borderLight)`,
+                              }}
+                            >
+                              <FiCheckCircle className="h-3 w-3 mr-1" />
+                              {feature.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+                            </Badge>
+                          ))}
+                      </div>
+                    </div>
+
+                    {/* Subcategories */}
+                    {shopData.subcategories.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-3" style={{ color: "var(--admin-modal-text)" }}>
+                          Subcategories ({shopData.subcategories.length})
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {shopData.subcategories.map((sub, index) => (
+                            <Badge
+                              key={index}
+                              className="px-3 py-1"
+                              style={{
+                                backgroundColor: "var(--admin-modal-badgeLight)",
+                                color: "var(--admin-modal-primary)",
+                                border: `1px solid var(--admin-modal-borderLight)`,
+                              }}
+                            >
+                              {sub}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
             )}
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Footer Actions */}
           <div
-            className="flex justify-between items-center pt-6 border-t"
-            style={{ borderColor: "var(--admin-modal-borderLight)" }}
+            className="flex items-center justify-between pt-6 border-t flex-shrink-0"
+            style={{ borderColor: "var(--admin-modal-border)" }}
           >
-            <Button
-              variant="outline"
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-              disabled={currentStep === 1}
-              className="flex items-center gap-2 px-6"
-              style={{
-                borderColor: "var(--admin-modal-border)",
-                backgroundColor: "var(--admin-modal-buttonSecondary)",
-                color: "var(--admin-modal-text)",
-              }}
-            >
-              <FiArrowLeft className="h-4 w-4" />
-              Previous
-            </Button>
+            <div className="flex items-center gap-2">
+              {currentStep > 1 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  className="flex items-center gap-2"
+                  style={{
+                    borderColor: "var(--admin-modal-border)",
+                    color: "var(--admin-modal-textSecondary)",
+                    backgroundColor: "var(--admin-modal-buttonSecondary)",
+                  }}
+                >
+                  <FiArrowLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+              )}
+            </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm" style={{ color: "var(--admin-modal-textMuted)" }}>
-                Step {currentStep} of {steps.length}
-              </span>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange?.(false)}
+                style={{
+                  borderColor: "var(--admin-modal-border)",
+                  color: "var(--admin-modal-textSecondary)",
+                  backgroundColor: "var(--admin-modal-buttonSecondary)",
+                }}
+              >
+                Cancel
+              </Button>
 
               {currentStep < 5 ? (
                 <Button
                   onClick={() => setCurrentStep(currentStep + 1)}
-                  className="flex items-center gap-2 px-6 text-white"
-                  style={{ background: themeConfig.gradient, color: "white" }}
+                  className="flex items-center gap-2 px-6"
+                  style={{
+                    background: themeConfig.gradient,
+                    color: "white",
+                    border: "none",
+                  }}
                 >
                   Next
                   <FiArrowRight className="h-4 w-4" />
@@ -1548,18 +1428,22 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-8 text-white"
-                  style={{ background: themeConfig.gradient, color: "white" }}
+                  className="flex items-center gap-2 px-8"
+                  style={{
+                    background: themeConfig.gradient,
+                    color: "white",
+                    border: "none",
+                  }}
                 >
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                      Creating Shop...
+                      Updating Shop...
                     </>
                   ) : (
                     <>
                       <FiCheckCircle className="h-4 w-4" />
-                      Create Shop
+                      Update Shop
                     </>
                   )}
                 </Button>
@@ -1571,5 +1455,3 @@ export function NewShopModal({ trigger, open, onOpenChange }: NewShopModalProps)
     </TooltipProvider>
   )
 }
-
-

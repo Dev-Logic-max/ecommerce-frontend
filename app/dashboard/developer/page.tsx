@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '../../../lib/api/auth';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -106,7 +106,7 @@ export default function DeveloperDashboard() {
       return;
     }
     try {
-      const response = await authApi.createCategory({ id: newCategoryId, name: newCategoryName });
+      const response = await authApi.createCategory({ name: newCategoryName });
       if (response.status === 201) {
         toast.success(`Category "${response.data.name}" created!`);
       }

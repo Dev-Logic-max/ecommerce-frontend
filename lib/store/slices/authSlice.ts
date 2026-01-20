@@ -1,6 +1,6 @@
 // lib/store/slices/authSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { authApi } from '../../../lib/api/auth';
+import { authApi } from '../../api/auth';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 
@@ -41,17 +41,17 @@ const authSlice = createSlice({
 export const { setUser, setLoading, setRoleRequests } = authSlice.actions;
 
 export const verifyToken = (onError: () => void) => async (dispatch: any) => {
-  try {
-    const response = await authApi.verify();
-    dispatch(setUser({ id: response.data.user.sub, username: response.data.user.username, role: response.data.user.role }));
-  } catch (error) {
-    localStorage.removeItem('token');
-    Cookies.remove('token');
-    dispatch(setUser(null));
-    onError();
-  } finally {
-    dispatch(setLoading(false));
-  }
+  // try {
+  //   const response = await authApi.verify();
+  //   dispatch(setUser({ id: response.data.user.sub, username: response.data.user.username, role: response.data.user.role }));
+  // } catch (error) {
+  //   localStorage.removeItem('token');
+  //   Cookies.remove('token');
+  //   dispatch(setUser(null));
+  //   onError();
+  // } finally {
+  //   dispatch(setLoading(false));
+  // }
 };
 
 export const fetchRoleRequests = () => async (dispatch: any, getState: any) => {
@@ -66,11 +66,11 @@ export const fetchRoleRequests = () => async (dispatch: any, getState: any) => {
 };
 
 export const logout = (onLogout: () => void) => (dispatch: any) => {
-  localStorage.removeItem('token');
-  Cookies.remove('token');
-  dispatch(setUser(null));
-  toast.success('Logged out successfully!');
-  onLogout()
+  // localStorage.removeItem('token');
+  // Cookies.remove('token');
+  // dispatch(setUser(null));
+  // toast.success('Logged out successfully!');
+  // onLogout()
 };
 
 export default authSlice.reducer;
